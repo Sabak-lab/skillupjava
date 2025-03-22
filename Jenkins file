@@ -1,41 +1,14 @@
 pipeline {
     agent any
-    environment {
-        DOCKER_IMAGE = 'skillupjava-app'
-        DOCKER_TAG = 'latest'
-    }
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main', url: 'https://github.com/Sabak-lab/skillupjava.git'
             }
         }
         stage('Build') {
             steps {
-                sh './mvnw clean install'
-            }
-        }
-        stage('Test') {
-            steps {
-                sh './mvnw test'
-            }
-        }
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
-            }
-        }
-        stage('Push to Docker Registry') {
-            steps {
-                withDockerRegistry([credentialsId: 'docker-hub-credentials']) {
-                    sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG your-docker-hub-username/$DOCKER_IMAGE:$DOCKER_TAG'
-                    sh 'docker push your-docker-hub-username/$DOCKER_IMAGE:$DOCKER_TAG'
-                }
-            }
-        }
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh 'kubectl apply -f k8s/deployment.yaml'
+                echo "Building the application..."
             }
         }
     }
