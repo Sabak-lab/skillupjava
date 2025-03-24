@@ -9,9 +9,11 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/your-username/skillupjava.git'
+                git credentialsId: '79482a8e-12af-4ec7-9f47-c82f4db812f7', url: 'https://github.com/Sabak-lab/skillupjava.git'
             }
         }
+    }
+}
 
         stage('Build Docker Image') {
             steps {
