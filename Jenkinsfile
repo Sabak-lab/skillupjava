@@ -15,7 +15,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t ${env.CONTAINER_REGISTRY} ."
+               bat 'cmd.exe /c docker build -t myapp .'
             }
         }
 
