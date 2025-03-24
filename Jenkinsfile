@@ -12,19 +12,17 @@ pipeline {
                 git credentialsId: '79482a8e-12af-4ec7-9f47-c82f4db812f7', url: 'https://github.com/Sabak-lab/skillupjava.git'
             }
         }
-    }
-}
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t %CONTAINER_REGISTRY% ."
+                bat "docker build -t ${env.CONTAINER_REGISTRY} ."
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
                 withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
-                    bat "docker push %CONTAINER_REGISTRY%"
+                    bat "docker push ${env.CONTAINER_REGISTRY}"
                 }
             }
         }
@@ -49,7 +47,7 @@ pipeline {
                     spec:
                       containers:
                         - name: skillup-java
-                          image: %CONTAINER_REGISTRY%
+                          image: ${env.CONTAINER_REGISTRY}
                           ports:
                             - containerPort: 8080
                 ---
