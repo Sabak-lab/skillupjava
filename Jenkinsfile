@@ -14,10 +14,14 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-               bat 'cmd.exe /c docker build -t myapp .'
-            }
-        }
+    steps {
+        bat '''
+        echo Building Docker Image...
+        docker build -t my-image .
+        '''
+    }
+}
+
 
         stage('Push to Docker Hub') {
             steps {
