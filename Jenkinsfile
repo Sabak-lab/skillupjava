@@ -14,27 +14,31 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-    steps {
-        bat '''
-        echo Building Docker Image...
-        docker build -t my-image .
-        '''
-    }
-}
-
+            steps {
+                bat '''
+                echo Building Docker Image...
+                cmd /c docker build -t %IMAGE_NAME% .
+                '''
+            }
+        }
 
         stage('Push to Docker Hub') {
             steps {
                 withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
-                    bat "docker push ${env.CONTAINER_REGISTRY}"
+                    bat '''
+                    echo Pushing Docker Image to Hub...
+                    cmd /c docker tag %IMAGE_NAME% %CONTAINER_REGISTRY%
+                    cmd /c docker push %CONTAINER_REGISTRY%
+                    '''
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                bat """
-                kubectl apply -f - <<EOF
+                bat '''
+                echo Deploying to Kubernetes...
+                cmd /c kubectl apply -f - <<EOF
                 apiVersion: apps/v1
                 kind: Deployment
                 metadata:
@@ -51,7 +55,7 @@ pipeline {
                     spec:
                       containers:
                         - name: skillup-java
-                          image: ${env.CONTAINER_REGISTRY}
+                          image: %CONTAINER_REGISTRY%
                           ports:
                             - containerPort: 8080
                 ---
@@ -68,13 +72,16 @@ pipeline {
                       targetPort: 8080
                   type: LoadBalancer
                 EOF
-                """
+                '''
             }
         }
 
         stage('Expose Public URL') {
             steps {
-                bat "minikube service skillup-java-service --url"
+                bat '''
+                echo Getting Public URL...
+                cmd /c minikube service skillup-java-service --url
+                '''
             }
         }
     }
