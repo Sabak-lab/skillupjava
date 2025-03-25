@@ -9,80 +9,51 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Sabak-lab/skillupjava.git'
+                git branch: 'main', url: 'https://github.com/YOUR-GITHUB-USERNAME/skillupjava.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat '''
-                echo Building Docker Image...
-                cmd /c docker build -t %IMAGE_NAME% .
-                '''
+                script {
+                    sh '''
+                    echo "Building Docker Image..."
+                    docker build -t ${IMAGE_NAME} .
+                    '''
+                }
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
                 withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
-                    bat '''
-                    echo Pushing Docker Image to Hub...
-                    cmd /c docker tag %IMAGE_NAME% %CONTAINER_REGISTRY%
-                    cmd /c docker push %CONTAINER_REGISTRY%
-                    '''
+                    script {
+                        sh '''
+                        echo "Tagging and Pushing Docker Image..."
+                        docker tag ${IMAGE_NAME} ${CONTAINER_REGISTRY}:latest
+                        docker push ${CONTAINER_REGISTRY}:latest
+                        '''
+                    }
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                bat '''
-                echo Deploying to Kubernetes...
-                cmd /c kubectl apply -f - <<EOF
-                apiVersion: apps/v1
-                kind: Deployment
-                metadata:
-                  name: skillup-java
-                spec:
-                  replicas: 1
-                  selector:
-                    matchLabels:
-                      app: skillup-java
-                  template:
+                script {
+                    sh '''
+                    echo "Deploying to Kubernetes..."
+                    cat <<EOF | kubectl apply -f -
+                    apiVersion: apps/v1
+                    kind: Deployment
                     metadata:
-                      labels:
-                        app: skillup-java
+                      name: skillup-java
                     spec:
-                      containers:
-                        - name: skillup-java
-                          image: %CONTAINER_REGISTRY%
-                          ports:
-                            - containerPort: 8080
-                ---
-                apiVersion: v1
-                kind: Service
-                metadata:
-                  name: skillup-java-service
-                spec:
-                  selector:
-                    app: skillup-java
-                  ports:
-                    - protocol: TCP
-                      port: 80
-                      targetPort: 8080
-                  type: LoadBalancer
-                EOF
-                '''
-            }
-        }
-
-        stage('Expose Public URL') {
-            steps {
-                bat '''
-                echo Getting Public URL...
-                cmd /c minikube service skillup-java-service --url
-                '''
-            }
-        }
-    }
-}
+                      replicas: 1
+                      selector:
+                        matchLabels:
+                          app: skillup-java
+                      template:
+                        metadata:
+                          labels:
+                            app: skillup-java
