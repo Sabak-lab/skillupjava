@@ -57,3 +57,37 @@ pipeline {
                         metadata:
                           labels:
                             app: skillup-java
+                        spec:
+                          containers:
+                            - name: skillup-java
+                              image: ${CONTAINER_REGISTRY}:latest
+                              ports:
+                                - containerPort: 8080
+                    ---
+                    apiVersion: v1
+                    kind: Service
+                    metadata:
+                      name: skillup-java-service
+                    spec:
+                      selector:
+                        app: skillup-java
+                      ports:
+                        - protocol: TCP
+                          port: 80
+                          targetPort: 8080
+                      type: LoadBalancer
+                    EOF
+                    '''
+                }
+            }
+        }
+
+        stage('Expose Public URL') {
+            steps {
+                script {
+                    sh "kubectl get services skillup-java-service -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                }
+            }
+        }
+    }
+}
