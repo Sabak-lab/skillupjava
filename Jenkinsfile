@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'sabareesh954/skillupjava' 
+        DOCKER_IMAGE = 'sabareesh954/skillupjava' // Replace with actual Docker Hub username
         KUBE_DEPLOYMENT = 'skillupjava-deployment'
         KUBE_SERVICE = 'skillupjava-service'
     }
@@ -10,14 +10,14 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Sabak-lab/skillupjava.git'
+                git 'https://github.com/Sabak-lab/skillupjava.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    bat 'docker build -t $DOCKER_IMAGE .'
+                    sh 'docker build -t $DOCKER_IMAGE .'
                 }
             }
         }
@@ -26,7 +26,7 @@ pipeline {
             steps {
                 script {
                     withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
-                        bat 'docker push $DOCKER_IMAGE'
+                        sh 'docker push $DOCKER_IMAGE'
                     }
                 }
             }
@@ -84,3 +84,4 @@ pipeline {
         }
     }
 }
+
