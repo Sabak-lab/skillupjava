@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('d871436d-1e3c-4417-827f-7ed1f6fdc964')
+        DOCKER_HUB_CREDENTIALS = docker login -u "sabareesh954@outlook.com" -p "Sabak@954"
         IMAGE_NAME = "sabareesh954/skillupjava"  // Replace with your Docker Hub repo
     }
 
