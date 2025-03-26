@@ -2,87 +2,83 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'sabareesh954/skillupjava' 
-        KUBE_DEPLOYMENT = 'skillupjava-deployment'
-        KUBE_SERVICE = 'skillupjava-service'
+        IMAGE_NAME = "skillup-java-app"
+        CONTAINER_REGISTRY = "your-docker-hub-username/skillup-java"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/Sabak-lab/skillupjava.git'
+                git branch: 'main', url: 'https://github.com/Sabak-lab/skillupjava.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE .'
-                }
+                sh '''
+                echo "Building Docker Image..."
+                docker build -t ${IMAGE_NAME} .
+                '''
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push to Docker Hub') {
             steps {
-                script {
-                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
-                        sh "docker push ${env.CONTAINER_REGISTRY}
-                    }
+                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                    sh "docker tag ${IMAGE_NAME} ${CONTAINER_REGISTRY}"
+                    sh "docker push ${CONTAINER_REGISTRY}"
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    sh """
-                    kubectl apply -f - <<EOF
-                    apiVersion: apps/v1
-                    kind: Deployment
+                sh """
+                kubectl apply -f - <<EOF
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: skillup-java
+                spec:
+                  replicas: 1
+                  selector:
+                    matchLabels:
+                      app: skillup-java
+                  template:
                     metadata:
-                      name: ${KUBE_DEPLOYMENT}
+                      labels:
+                        app: skillup-java
                     spec:
-                      replicas: 1
-                      selector:
-                        matchLabels:
-                          app: skillupjava
-                      template:
-                        metadata:
-                          labels:
-                            app: skillupjava
-                        spec:
-                          containers:
-                          - name: skillupjava
-                            image: ${DOCKER_IMAGE}
-                            ports:
+                      containers:
+                        - name: skillup-java
+                          image: ${CONTAINER_REGISTRY}
+                          ports:
                             - containerPort: 8080
-                    ---
-                    apiVersion: v1
-                    kind: Service
-                    metadata:
-                      name: ${KUBE_SERVICE}
-                    spec:
-                      type: LoadBalancer
-                      selector:
-                        app: skillupjava
-                      ports:
-                        - protocol: TCP
-                          port: 80
-                          targetPort: 8080
-                    EOF
-                    """
-                }
+                ---
+                apiVersion: v1
+                kind: Service
+                metadata:
+                  name: skillup-java-service
+                spec:
+                  selector:
+                    app: skillup-java
+                  ports:
+                    - protocol: TCP
+                      port: 80
+                      targetPort: 8080
+                  type: LoadBalancer
+                EOF
+                """
             }
         }
 
         stage('Expose Public URL') {
             steps {
-                script {
-                    sh 'kubectl get services ${KUBE_SERVICE} -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"'
-                }
+                sh "minikube service skillup-java-service --url"
             }
         }
     }
 }
+
 
 
