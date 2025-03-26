@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/YOUR-GITHUB-USERNAME/skillupjava.git'
+                git branch: 'main', url: 'https://github.com/Sabak-lab/skillupjava.git'
             }
         }
 
