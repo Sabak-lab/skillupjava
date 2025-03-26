@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'sabareesh954/skillupjava' // Replace with actual Docker Hub username
+        DOCKER_IMAGE = 'sabareesh954/skillupjava' 
         KUBE_DEPLOYMENT = 'skillupjava-deployment'
         KUBE_SERVICE = 'skillupjava-service'
     }
@@ -26,7 +26,7 @@ pipeline {
             steps {
                 script {
                     withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
-                        sh 'docker push $DOCKER_IMAGE'
+                        sh "docker push ${env.CONTAINER_REGISTRY}
                     }
                 }
             }
@@ -84,4 +84,5 @@ pipeline {
         }
     }
 }
+
 
