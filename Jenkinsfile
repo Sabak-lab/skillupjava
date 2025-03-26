@@ -2,29 +2,22 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_CREDENTIALS = docker login -u "sabareesh954@outlook.com" -p "Sabak@954"
-        IMAGE_NAME = "sabareesh954/skillupjava"  // Replace with your Docker Hub repo
+        DOCKER_IMAGE = 'sabareesh954/skillupjava' 
+        KUBE_DEPLOYMENT = 'skillupjava-deployment'
+        KUBE_SERVICE = 'skillupjava-service'
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Sabak-lab/skillupjava.git'
+                git 'https://github.com/Sabak-lab/skillupjava.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t $IMAGE_NAME ."
-                }
-            }
-        }
-
-        stage('Login to Docker Hub') {
-            steps {
-                script {
-                    sh "echo ${DOCKER_HUB_CREDENTIALS_PSW} | docker login -u ${DOCKER_HUB_CREDENTIALS_USR} --password-stdin"
+                    sh 'docker build -t $DOCKER_IMAGE .'
                 }
             }
         }
@@ -32,7 +25,9 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    sh "docker push $IMAGE_NAME"
+                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/']) {
+                        sh 'docker push $DOCKER_IMAGE'
+                    }
                 }
             }
         }
@@ -41,9 +36,49 @@ pipeline {
             steps {
                 script {
                     sh """
-                    kubectl create deployment skillupjava --image=$IMAGE_NAME || kubectl set image deployment/skillupjava skillupjava=$IMAGE_NAME
-                    kubectl expose deployment skillupjava --type=LoadBalancer --port=8080
+                    kubectl apply -f - <<EOF
+                    apiVersion: apps/v1
+                    kind: Deployment
+                    metadata:
+                      name: ${KUBE_DEPLOYMENT}
+                    spec:
+                      replicas: 1
+                      selector:
+                        matchLabels:
+                          app: skillupjava
+                      template:
+                        metadata:
+                          labels:
+                            app: skillupjava
+                        spec:
+                          containers:
+                          - name: skillupjava
+                            image: ${DOCKER_IMAGE}
+                            ports:
+                            - containerPort: 8080
+                    ---
+                    apiVersion: v1
+                    kind: Service
+                    metadata:
+                      name: ${KUBE_SERVICE}
+                    spec:
+                      type: LoadBalancer
+                      selector:
+                        app: skillupjava
+                      ports:
+                        - protocol: TCP
+                          port: 80
+                          targetPort: 8080
+                    EOF
                     """
+                }
+            }
+        }
+
+        stage('Expose Public URL') {
+            steps {
+                script {
+                    sh 'kubectl get services ${KUBE_SERVICE} -o jsonpath="{.status.loadBalancer.ingress[0].hostname}"'
                 }
             }
         }
