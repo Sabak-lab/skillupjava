@@ -14,16 +14,10 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                script {
-                    sh '''
-                    echo "Building Docker Image..."
-                    docker build -t ${IMAGE_NAME} .
-                    '''
-                }
-            }
-        }
-
+    steps {
+        bat 'docker build -t my-image:latest .'
+    }
+}
         stage('Push to Docker Hub') {
             steps {
                 withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
